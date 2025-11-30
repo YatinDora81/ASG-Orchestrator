@@ -2,18 +2,18 @@ FROM codercom/code-server:4.96.4
 
 USER root
 
-# Install Node.js
 RUN apt-get update \
-    && apt-get install -y curl \
-    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y curl xz-utils \
+    && curl -fsSL https://nodejs.org/dist/v24.5.0/node-v24.5.0-linux-x64.tar.xz -o node.tar.xz \
+    && tar -xJf node.tar.xz -C /usr/local --strip-components=1 \
+    && rm node.tar.xz \
+    && node -v \
+    && npm -v
 
 RUN node -v
 
 # Clone React project (root clones, coder owns)
-RUN git clone https://github.com/hayyi2/react-shadcn-starter.git /home/coder/react-starter
+RUN git clone https://github.com/YatinDora81/react-tailwind-starter.git /home/coder/react-starter
 RUN chown -R coder:coder /home/coder/react-starter
 
 # Switch to coder
@@ -29,10 +29,13 @@ EXPOSE 5173
 # Remove old config to prevent password prompt
 RUN rm -rf /home/coder/.config/code-server
 
+# Default dark theme
+RUN mkdir -p /home/coder/.local/share/code-server/User && \
+    echo '{"workbench.colorTheme": "Default Dark+", "workbench.preferredDarkColorTheme": "Default Dark+"}' > /home/coder/.local/share/code-server/User/settings.json && \
+    chmod 644 /home/coder/.local/share/code-server/User/settings.json
+
 # Create the startup script AS coder (not root)
 RUN printf "%s\n" '#!/bin/bash' \
-'cd /home/coder/react-starter' \
-'npm run dev ' \
 'exec code-server --auth none --bind-addr 0.0.0.0:8080 /home/coder/react-starter' \
 > /home/coder/start.sh
 
